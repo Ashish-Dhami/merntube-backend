@@ -45,7 +45,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   sort["_id"] = "asc";
 
   const videos = await Video.find(filter)
-    .populate("owner", "avatar username")
+    .populate("owner", "avatar username fullName")
     .sort(sort)
     .skip((page - 1) * limit)
     .limit(limit);
@@ -136,6 +136,7 @@ const getVideoById = asyncHandler(async (req, res) => {
           {
             $project: {
               username: 1,
+              fullName: 1,
               email: 1,
               avatar: 1,
               totalSubscribers: 1,

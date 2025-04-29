@@ -50,6 +50,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
             $project: {
               _id: 0,
               username: 1,
+              fullName: 1,
               email: 1,
               avatar: 1,
             },
