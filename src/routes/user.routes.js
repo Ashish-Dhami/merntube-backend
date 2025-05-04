@@ -4,12 +4,14 @@ import {
   loginUser,
   logoutUser,
   refreshAccessToken,
+  forgetMe,
   changePassword,
   getCurrentUser,
   updateAccountDetails,
   updateUserAvatar,
   getUserChannelProfile,
   getWatchHistory,
+  getSavedUser,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { isLoggedIn } from "../middlewares/auth.middleware.js";
@@ -21,6 +23,7 @@ router
 router.route("/login").post(loginUser);
 router.route("/logout").post(isLoggedIn, logoutUser);
 router.route("/refreshAccessToken").post(refreshAccessToken);
+router.route("/forget-me").post(forgetMe);
 router.route("/changePassword").post(isLoggedIn, changePassword);
 router.route("/currentUser").get(isLoggedIn, getCurrentUser);
 router.route("/updateDetails").patch(isLoggedIn, updateAccountDetails);
@@ -29,5 +32,6 @@ router
   .patch(isLoggedIn, upload.single("avatar"), updateUserAvatar);
 router.route("/userProfile/:username").get(isLoggedIn, getUserChannelProfile);
 router.route("/watchHistory").get(isLoggedIn, getWatchHistory);
+router.route("/get-saved-user").get(getSavedUser);
 
 export default router;

@@ -64,6 +64,12 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("refreshToken") || !this.refreshToken) return next();
+  this.refreshToken = await bcrypt.hash(this.refreshToken, 10);
+  next();
+});
+
 userSchema.methods.verifyPassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
@@ -74,10 +80,14 @@ userSchema.methods.generateAccessToken = async function () {
   });
 };
 
-userSchema.methods.generateRefreshToken = async function () {
-  return await jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-  });
+userSchema.methods.generateRefreshToken = async function (rememberMe) {
+  return await jwt.sign(
+    { id: this._id, rememberMe: !!rememberMe },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: rememberMe ? "30d" : process.env.REFRESH_TOKEN_EXPIRY,
+    }
+  );
 };
 
 export const User = mongoose.model("User", userSchema);
