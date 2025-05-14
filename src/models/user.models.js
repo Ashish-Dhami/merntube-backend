@@ -74,6 +74,12 @@ userSchema.methods.verifyPassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
+userSchema.methods.generatePasswordResetToken = async function () {
+  return await jwt.sign({ id: this._id }, process.env.RESET_TOKEN_SECRET, {
+    expiresIn: process.env.RESET_TOKEN_EXPIRY,
+  });
+};
+
 userSchema.methods.generateAccessToken = async function () {
   return await jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRY,

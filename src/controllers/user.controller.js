@@ -5,6 +5,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteFromUrl, upload } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { ResetToken } from "../models/resetToken.models.js";
+import { sendPasswordResetMail } from "../utils/mailer.js";
 
 const generateAccessAndRefreshTokens = async (userId, rememberMe) => {
   if (!userId) return { accessToken: null, refreshToken: null };
@@ -186,6 +188,58 @@ const changePassword = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, "password changed succesfully"));
+});
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) throw new ApiError(401, "No user found for this email");
+
+  const passResetToken = await user.generatePasswordResetToken();
+  await ResetToken.create({
+    userId: user._id,
+    token: passResetToken,
+  });
+
+  const passResetLink = `${process.env.FRONTEND_URL}/reset-password/${passResetToken}`;
+  //send email
+  const mailResponse = await sendPasswordResetMail(passResetLink, email);
+
+  return res.status(200).json(
+    new ApiResponse(200, "Sent email with password reset link", {
+      mailResponse,
+    })
+  );
+});
+
+const verifyResetToken = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const resetToken = await ResetToken.findOne({ token });
+  if (!resetToken || resetToken.expiresAt < Date.now()) {
+    throw new ApiError(400, "Invalid or expired token");
+  }
+  return res.status(200).json(new ApiResponse(200, "Token is valid"));
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+  const resetToken = await ResetToken.findOne({ token });
+  if (!resetToken || resetToken.expiresAt < Date.now()) {
+    throw new ApiError(400, "Invalid or expired token");
+  }
+
+  const user = await User.findById(resetToken.userId);
+  if (!user) throw new ApiError(400, "User not found");
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  await ResetToken.deleteOne({ token });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Password reset successful"));
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
@@ -455,4 +509,7 @@ export {
   getUserChannelProfile,
   getWatchHistory,
   getSavedUser,
+  forgotPassword,
+  verifyResetToken,
+  resetPassword,
 };

@@ -12,6 +12,9 @@ import {
   getUserChannelProfile,
   getWatchHistory,
   getSavedUser,
+  forgotPassword,
+  verifyResetToken,
+  resetPassword,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { isLoggedIn } from "../middlewares/auth.middleware.js";
@@ -33,5 +36,8 @@ router
 router.route("/userProfile/:username").get(isLoggedIn, getUserChannelProfile);
 router.route("/watchHistory").get(isLoggedIn, getWatchHistory);
 router.route("/get-saved-user").get(getSavedUser);
+router.route("/forgot-password").post(forgotPassword);
+router.route("/verify-reset-token/:token").get(verifyResetToken);
+router.route("/reset-password/:token").post(resetPassword);
 
 export default router;
