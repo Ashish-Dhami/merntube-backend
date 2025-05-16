@@ -275,21 +275,33 @@ const getSavedUser = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { email: newEmail } = req.body;
-  if (!newEmail) throw new ApiError(400, "New email not supplied");
-  const doesEmailExist = await User.exists({ email: newEmail });
-  if (doesEmailExist)
-    throw new ApiError(400, "Email already exists! Enter a unique one");
+  const { email, fullName } = req.body;
+
+  if ([email, fullName].every((field) => !field?.trim())) {
+    throw new ApiError(400, "At least one valid field is required for update");
+  }
+
+  const updateFields = {};
+  if (email?.trim()) {
+    const doesEmailExist = await User.exists({ email });
+    if (doesEmailExist) {
+      throw new ApiError(400, "Email already exists! Enter a unique one");
+    }
+    updateFields.email = email.trim();
+  }
+  if (fullName?.trim()) {
+    updateFields.fullName = fullName.trim();
+  }
+
   const user = await User.findByIdAndUpdate(
     req.user._id,
-    {
-      $set: { email: newEmail },
-    },
+    { $set: updateFields },
     { new: true }
   ).select("-password -refreshToken");
+
   return res
-    .status(201)
-    .json(new ApiResponse(201, "account details updated successfully!", user));
+    .status(200)
+    .json(new ApiResponse(200, "Account details updated successfully!", user));
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
